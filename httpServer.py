@@ -13,7 +13,7 @@ def runCmd(cmd):
 def handle_client(client: socket.socket):
     request = client.recv(1024)
     data = request.decode("gbk")
-    #print(f"receive:\n{data}\n")
+    print(f"receive:\n{data}\n")
     str = data.split('\r\n')
     request_start_line = str[0]
     #print(f"request_start_line:\n\t{request_start_line}\n")
@@ -24,7 +24,10 @@ def handle_client(client: socket.socket):
 
     response_start_line = "HTTP/1.1 200 OK\r\b"
     response_headers = "Server: python\r\nName: mali\r\n"
-    response_text = runCmd(cmd)
+    if cmd == "favicon.ico":
+        response_text = ""
+    else:
+        response_text = runCmd(cmd)
 
     response = response_start_line + response_headers + "\r\n" + response_text
     data = bytes(response, "gbk")
