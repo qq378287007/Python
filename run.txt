@@ -1,0 +1,18 @@
+docker run -p 2080:2080 -v $(pwd):/root/python -w /root/python -d python python sockerServer.py
+python3 sockerClient.py
+
+
+docker ps -a
+docker container prune
+docker inspect container_id
+ifconfig
+
+telnet ip port
+
+sudo ufw status
+sudo ufw allow port
+sudo ufw reload
+sudo ufw enable
+
+
+

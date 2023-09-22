@@ -16,11 +16,24 @@ def runCmd(cmd):
         str = "error"
     return str
 
-def handle_client(client: socket.socket):
-    request = client.recv(1024)
-    data = request.decode("gbk") #str.encode("utf-8")
-    print(f"receive:\n{data}\n")
-    str = data.split('\r\n')
+def handle_conn(conn: socket.socket):
+    '''
+    data = b''
+    while True:
+        recv_data = conn.recv(1024)
+        if not recv_data:
+            break
+        data += recv_data
+    '''
+    data = conn.recv(1024 * 2)
+    #data = request.decode("gbk") #str.encode("utf-8")
+    ascii = data.decode('ascii') #解码
+    str = ascii.split('\r\n')
+    #print("receive:\n")
+    for line in str:
+        print(line)
+    conn.send("HTTP/1.1 200 OK\r\bServer: python\r\n\r\nreceive".encode("ascii"))
+    '''
     request_start_line = str[0]
     #print(f"request_start_line:\n\t{request_start_line}\n")
     tmp = request_start_line.split(' ')
@@ -38,20 +51,15 @@ def handle_client(client: socket.socket):
     response = response_start_line + response_headers + "\r\n" + response_text
     data = bytes(response, "gbk")
     #print(f"send:\n{data}\n")
-    client.send(data) #bytes.decode("gbk")
+    conn.send(data) #bytes.decode("gbk")
+    '''
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # 创建套接字
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # 端口复用
-s.bind(("127.0.0.1", 8080))  # 绑定端口
-s.listen(5)  # 等待客户端连接
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(("127.0.0.1", 2080))
+s.listen(5)
 
 while True:
-    client, addr = s.accept()
-    #print(f"{client} : {addr}\n")
-    handle_client(client)
-    client.close()
-
-#curl http://127.0.0.1:8080/ping
-#curl http://127.0.0.1:8080/ipconfig
-
-
+    conn, addr = s.accept()
+    handle_conn(conn)
+    conn.close()
