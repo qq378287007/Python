@@ -6,6 +6,8 @@ cmd = "ipconfig"
 cmd = "ls"
 cmd = "hello.exe"
 cmd = "ping"
+netstat -an
+tasklist
 '''
 def runCmd(cmd):
     try:
@@ -54,12 +56,16 @@ def handle_conn(conn: socket.socket):
     conn.send(data) #bytes.decode("gbk")
     '''
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.bind(("127.0.0.1", 2080))
-s.listen(5)
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # 创建套接字
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # 端口复用
+s.bind(("127.0.0.1", 8080))  # 绑定端口
+s.listen(5)  # 等待客户端连接
 
 while True:
     conn, addr = s.accept()
+    #print(f"{conn} : {addr}\n")
     handle_conn(conn)
     conn.close()
+
+#curl http://127.0.0.1:8080/ping
+#curl http://127.0.0.1:8080/ipconfig

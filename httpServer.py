@@ -1,12 +1,19 @@
 import socket
+import gzip
+import urllib.parse
 import subprocess
 
-'''
-cmd = "ipconfig"
-cmd = "ls"
-cmd = "hello.exe"
-cmd = "ping"
-'''
+def gzip_file(file_name):
+    with open(file_name, 'rb') as file:
+        bs = file.read()
+        value = gzip.compress(bs)
+        return value
+    
+def one_space(cmd: str):
+    str_list = cmd.split(' ')
+    str_list = [x for x in str_list if x]
+    return ' '.join(str_list)
+
 def runCmd(cmd):
     try:
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -16,42 +23,44 @@ def runCmd(cmd):
         str = "error"
     return str
 
-def handle_client(client: socket.socket):
-    request = client.recv(1024)
-    data = request.decode("gbk") #str.encode("utf-8")
-    print(f"receive:\n{data}\n")
-    str = data.split('\r\n')
-    request_start_line = str[0]
-    #print(f"request_start_line:\n\t{request_start_line}\n")
-    tmp = request_start_line.split(' ')
-    cmd = tmp[1]
-    cmd = cmd[1:]
-    #print(f"cmd:\n\t{cmd}\n")
-
-    response_start_line = "HTTP/1.1 200 OK\r\b"
-    response_headers = "Server: python\r\nName: mali\r\n"
-    if cmd == "favicon.ico":
-        response_text = ""
+def deal_first_line(line: str):
+    print(f"line: {line}")
+    if line == "GET /favicon.ico HTTP/1.1":
+        value = gzip_file('favicon.ico')
+        str = f"HTTP/1.1 200 OK\r\nAccept-Ranges: bytes\r\nContent-Encoding: gzip\r\nContent-Length: len(value)\r\nContent-Type: image/x-icon\r\n\r\n"
+        return str.encode("ascii") + value
     else:
-        response_text = runCmd(cmd)
+        str = line.split(' ')
+        cmd = str[1]
+        cmd = cmd[1:]
+        cmd = urllib.parse.unquote(cmd)
+        cmd = one_space(cmd)
+        print(f"cmd: {cmd}")
 
-    response = response_start_line + response_headers + "\r\n" + response_text
-    data = bytes(response, "gbk")
-    #print(f"send:\n{data}\n")
-    client.send(data) #bytes.decode("gbk")
+        str = f"HTTP/1.1 200 OK\r\n\r\n"
+        out = runCmd(cmd)
+        return (str+out).encode("gbk")
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # 创建套接字
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # 端口复用
-s.bind(("127.0.0.1", 8080))  # 绑定端口
-s.listen(5)  # 等待客户端连接
+def handle_conn(conn: socket.socket):
+    data = conn.recv(1024)
+    ascii = data.decode('ascii')
+    str = ascii.split('\r\n')
+    #for line in str:
+    #    print(line)
+
+    line = str[0]
+    bs = deal_first_line(line)
+    conn.send(bs)
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(("127.0.0.1", 8080))
+s.listen(5)
 
 while True:
-    client, addr = s.accept()
-    #print(f"{client} : {addr}\n")
-    handle_client(client)
-    client.close()
+    conn, addr = s.accept()
+    handle_conn(conn)
+    conn.close()
 
-#curl http://127.0.0.1:8080/ping
-#curl http://127.0.0.1:8080/ipconfig
-
+# http://127.0.0.1:8080
 
