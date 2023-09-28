@@ -10,6 +10,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #s.connect(("192.168.0.102", 8888))
 #s.connect(("192.168.19.1", 8888))
 
+
 while True:
     str = input("Send: ")
     if str == "exit":
